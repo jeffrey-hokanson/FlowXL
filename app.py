@@ -1,9 +1,9 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 app = Flask(__name__)
 
 @app.route("/")
 def hello():
-	return "Hello World!"
+	return render_template('main.html')
 
 def make_col_entry( name, files ):
     return { "name":name, "files":files }
