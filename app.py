@@ -6,5 +6,9 @@ def hello():
 	return "Hello World!"
 
 if __name__ == "__main__":
-	app.run()
+
+	# Running in debug mode introduces ability interactively debug
+	# i.e., if file saved, reloads server.
+	# Note, debug mode is ___UNSAFE___
+	app.run(debug = True)
 
