@@ -1,9 +1,22 @@
-from flask import Flask
+from flask import Flask, jsonify
 app = Flask(__name__)
 
 @app.route("/")
 def hello():
 	return "Hello World!"
+
+def make_col_entry( name, files ):
+    return { "name":name, "files":files }
+
+
+@app.route("/api/1/jobs/<int:job_id>", methods=["GET"])
+def api_handle_job_details(job_id):
+    files = [ "file1.bbq", "file2.wtf", "file3.lol"]
+    status = "queued"
+    columns = [ make_col_entry( "col1", files), make_col_entry( "col2", [files[0]]), make_col_entry( "col3", [files[1]]) ]
+
+    return jsonify( files=files, status=status, columns=columns )
+
 
 if __name__ == "__main__":
 
