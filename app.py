@@ -24,13 +24,7 @@ def api_handle_job_details(job_id):
 
 @app.route("/jobs/<int:job_id>", methods=["GET"])
 def display_job_details(job_id):
-    files = [ "file1.bbq", "file2.wtf", "file3.lol"]
-    status = "queued"
-    columns = [ make_col_entry( "col1", files), make_col_entry( "col2", [files[0]]), make_col_entry( "col3", [files[1]]) ]
-
-    job_details  = simplejson.dumps( make_job_details_dict( files,status,columns ))
-
-    return render_template("job_details.html", job_id=job_id, job_details=job_details)
+    return render_template("job_details.html", job_id=job_id)
 
 if __name__ == "__main__":
 
