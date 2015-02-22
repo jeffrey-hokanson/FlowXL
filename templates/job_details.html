@@ -3,8 +3,13 @@
 <h1>Details for job {{ job_id }}</h1>
 
 
+<script src="{{ url_for('static', filename='vendor/lodash-3.3.0/lodash.js') }}"></script>
 <script src="{{ url_for('static', filename='js/job_details.js') }}"></script>
 
-<div id="job-details">    
+<div id="job-details">
 </div>
+
+<script>
+    flowXL.jobDetails.init({{job_id}}, "job-details");
+</script>
 {% endblock body %}
