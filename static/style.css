@@ -1,3 +1,25 @@
 .main-pane {
     margin-top: 5rem;
 }
+
+.job-status {
+}
+
+.marker-table table {
+	border-spacing: 10px;
+}
+.marker-table th, td {
+	padding: 10px;
+}
+
+.not-has-marker {
+	color: #F0F0F0;
+	//background-color: red;
+}
+
+/*
+.marker-table td {
+	border-right: 1px solid grey;
+	border-collapse: collapse;
+}
+*/

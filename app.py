@@ -16,9 +16,9 @@ def make_job_details_dict( files, status, columns ):
 
 @app.route("/api/1/jobs/<int:job_id>", methods=["GET"])
 def api_handle_job_details(job_id):
-    files = [ "file1.bbq", "file2.wtf", "file3.lol"]
+    files = [ "I01-4078770-Unstained-IrOnly_cells_found.fcs", "I02-4078770-PB-Baseline_cells_found.fcs","I03-4078770-BM-Baseline_cells_found.fcs"]
     status = "queued"
-    columns = [ make_col_entry( "col1", files), make_col_entry( "col2", [files[0]]), make_col_entry( "col3", [files[1]]) ]
+    columns = [ make_col_entry( "CD45", files), make_col_entry( "CD133", [files[0]]), make_col_entry( "CD123", [files[1]]) ]
 
     return jsonify( make_job_details_dict( files, status, columns) )
 
