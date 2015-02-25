@@ -17,6 +17,10 @@
 	//background-color: red;
 }
 
+.has-marker.active{
+	color: red;
+}
+
 /*
 .marker-table td {
 	border-right: 1px solid grey;

@@ -69,13 +69,31 @@ flowXL.jobDetails = ( function() {
             // then, the hard part: add td items under the correct file column
 			for (var i = 0; i < details.files.length; i++){
 				var $rowEl = document.createElement("td");
+				var elClass = ""
 				$rowEl.innerHTML = marker.name;
+				
+				// See if the file has the marker labeled
 				if (_.indexOf(marker.files, details.files[i]) != -1){
-					$rowEl.setAttribute("class", "has-marker");
+					elClass += "has-marker";
 				}
 				else {
-					$rowEl.setAttribute("class", "not-has-marker");
+					elClass += "not-has-marker";
 				}
+				// Next, see if the marker is active or not
+				elClass +=" ";
+				if (_.has(details.active, marker.name)){
+					if (details.active[marker.name]){
+						elClass += "active";
+					}
+					else{
+						elClass += "inactive";
+					}
+				}
+				else{
+					elClass += "inactive";
+				}
+
+				$rowEl.setAttribute("class", elClass);
 				$row.appendChild($rowEl);
 			}
 
