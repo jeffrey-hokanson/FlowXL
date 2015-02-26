@@ -26,6 +26,14 @@ def api_handle_job_details(job_id):
     active = {"CD8a": False, "CD45": True, "CD133": False, "CD123": False}
     return jsonify( make_job_details_dict( files, status, columns, active) )
 
+
+@app.route("/test/selector", methods=["GET"])
+def test_selector():
+    job_id = 1
+    return render_template("marker_selector.html", job_id=job_id)
+    
+
+
 @app.route("/jobs/<int:job_id>", methods=["GET"])
 def display_job_details(job_id):
     return render_template("job_details.html", job_id=job_id)

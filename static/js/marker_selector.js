@@ -1,7 +1,6 @@
 var flowXL = flowXL || {};
 
-
-flowXL.jobDetails = ( function() {
+flowXL.markerSelector = ( function() {
     function fetchJobDetails( jobID, onSuccess, onFailure ) {
         var r = new XMLHttpRequest();
         r.open("GET", "/api/1/jobs/" + jobID, false);
@@ -23,25 +22,10 @@ flowXL.jobDetails = ( function() {
     function renderJobDetails( details, $el ) {
 		// Clear the loading text
         $el.innerHTML = "";
-	
-		//*********************************************************************
-		// First post the current job status
-		//*********************************************************************
-
-		// This container labels it for our purposes
-		var $stat = document.createElement("div");
-		$stat.setAttribute('class', 'job-status');
-		$stat.innerHTML = "<div class='panel panel-default'>" +
-			"<div class='panel-heading'> <h3 class='panel-title'> Job Status</h3></div>" +
-			"<div class='panel-body'>" +  
-			details.status + "</div></div>";
-		$el.appendChild($stat);
-
-
 		//*********************************************************************
 		// Next, create the table of active markers
 		//*********************************************************************
-		var $table = flowXL.markerTable(details, false);	
+		var $table = flowXL.markerTable(details, true);	
 		// Build containers and place table inside
 		var $table_container = document.createElement("div");
 		$table_container.setAttribute('class','marker-table');

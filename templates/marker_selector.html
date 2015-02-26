@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Select Channels for job {{ job_id }}</h1>
+
+
+<script src="{{ url_for('static', filename='js/marker_selector.js') }}"></script>
+
+<div id="marker-selector">
+<script>
+    flowXL.markerSelector.init({{job_id}}, "marker-selector");
+</script>
+</div>
+
+{% endblock body %}
