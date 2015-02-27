@@ -45,7 +45,10 @@ flowXL.markerSelector = ( function() {
         var $container = document.getElementById(containerName);
         $container.innerHTML = "<strong>Loading...</strong>";
 
-        fetchJobDetails( jobID, function _onSuccess(details) { renderJobDetails(details,$container)}, console.log);
+        fetchJobDetails( jobID, function _onSuccess(details) { 
+		this.details = details;
+		renderJobDetails(details,$container)
+		}, console.log);
     };
 
     return {
