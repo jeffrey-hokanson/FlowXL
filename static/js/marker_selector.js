@@ -25,7 +25,7 @@ flowXL.markerSelector = ( function() {
 		//*********************************************************************
 		// Next, create the table of active markers
 		//*********************************************************************
-		var $table = flowXL.markerTable(details, true);	
+		var $table = new flowXL.markerTable(details, true);	
 		// Build containers and place table inside
 		var $table_container = document.createElement("div");
 		$table_container.setAttribute('class','marker-table');
