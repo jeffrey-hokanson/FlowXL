@@ -1,7 +1,7 @@
 var flowXL = flowXL || {};
 
 flowXL.markerSelector = ( function() {
-    function fetchJobDetails( jobID, onSuccess, onFailure ) {
+	function fetchJobDetails( jobID, onSuccess, onFailure ) {
         var r = new XMLHttpRequest();
         r.open("GET", "/api/1/jobs/" + jobID, false);
         r.onreadystatechange = function () {
@@ -48,7 +48,12 @@ flowXL.markerSelector = ( function() {
         fetchJobDetails( jobID, function _onSuccess(details) { renderJobDetails(details,$container)}, console.log);
     };
 
+	function test(x){
+		console.log(x);
+	}
+
     return {
-                init: init
+                init: init,
+				test: test
     };
 })();
