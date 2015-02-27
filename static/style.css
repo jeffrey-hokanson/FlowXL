@@ -18,7 +18,8 @@
 }
 
 .has-marker.active{
-	color: red;
+	color: white;
+	background-color:#2980b9;
 }
 
 /*
