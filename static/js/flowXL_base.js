@@ -3,6 +3,7 @@ var flowXL = flowXL || {};
 
 flowXL.MarkerTable = function(){
 	this.details = "undefined";	// Will hold the details structure from jobs/1
+	this.$table = document.createElement("table");
 	//this.showButtons = true; // boolean; if the buttons should be rendered
 
 
@@ -35,8 +36,15 @@ flowXL.MarkerTable = function(){
 		 * showButtons - (boolean) determines if the buttons should be shown
 		 *
 		 */
-		var $table = document.createElement("table");
+
+		var $table = this.$table;
 		var details = this.details;
+
+		// Nuke the current structure
+		while ($table.firstChild){
+			$table.removeChild($table.firstChild);
+		}
+
 		// Build top row of the table, containing the file names
 		var $header = document.createElement("tr");
 		["File Name:"].concat(details.files).forEach( function _addHeader( headerName ) {
@@ -123,6 +131,20 @@ flowXL.MarkerTable = function(){
 		}); // End the loop over the table
 	return $table;
 	}
+
+	this.toggleMarker = toggleMarker;
+	function toggleMarker(newActive){
+		// Takes a dictionary of marker and updates the details.active appropreately
+		for (var key in newActive) {
+			if (this.details.active.hasOwnProperty(key)){
+				this.details.active[key] = newActive[key];
+			}
+			else{
+				console.log("Tried to change state of invalid key" + key);
+			}
+		}
+	};
+
 };
 
 

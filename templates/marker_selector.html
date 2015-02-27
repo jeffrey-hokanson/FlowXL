@@ -5,10 +5,20 @@
 
 <script src="{{ url_for('static', filename='js/marker_selector.js') }}"></script>
 
-<div id="marker-selector">
-<script>
-    flowXL.markerSelector.init({{job_id}}, "marker-selector");
-</script>
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">Markers Used</h3>
+	</div>
+	<div class="panel-body">
+		<div class="marker-table">
+			<div id="marker-selector">
+			</div>
+		</div>
+	</div>	
 </div>
+<script>
+	var ms = new flowXL.MarkerSelector();
+    ms.init({{job_id}}, "marker-selector");
+</script>
 
 {% endblock body %}
