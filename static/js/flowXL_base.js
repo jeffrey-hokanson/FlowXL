@@ -40,6 +40,8 @@ flowXL.MarkerTable = function(){
 		var $table = this.$table;
 		var details = this.details;
 
+		var this_mt = this;	
+		
 		// Nuke the current structure
 		while ($table.firstChild){
 			$table.removeChild($table.firstChild);
@@ -54,8 +56,10 @@ flowXL.MarkerTable = function(){
 		});
 		$table.appendChild($header);
 
+
 		// Now render each column
 		details.columns.forEach( function _addMarkerRows( marker ) {
+			//self = this;
 			var $row = document.createElement("tr");
 			// First column of the table
 			var $button = document.createElement("td");
@@ -81,9 +85,23 @@ flowXL.MarkerTable = function(){
 				}	
 
 				if (_.indexOf(['plus', 'minus'], buttonType) != -1){
-					$button.innerHTML = "<button type='button' class='btn btn-default btn-sm'>"+
+					$button.innerHTML = "<button type='button' class='btn btn-default btn-sm' " + 
+						"id='" + marker.name + "'" +
+						">"+
 						"<span class='glyphicon glyphicon-" + buttonType + "'></span>" +
 						"</button>";
+					$button.addEventListener("click", function (){
+						var update = {};
+						if (buttonType == 'plus'){
+							update[marker.name] = true;
+						}
+						else{
+							update[marker.name] = false;
+						}
+						this_mt.toggleMarker(update);
+						this_mt.render(true)
+						console.log("clicked " + marker.name);
+					});
 				}
 				else{
 					$button.innerHTML ="<button type='button' class='btn btn-default btn-sm' disabled='true'>"+
@@ -129,15 +147,18 @@ flowXL.MarkerTable = function(){
 			// add the row to the table
 			$table.appendChild($row);
 		}); // End the loop over the table
+
 	return $table;
 	}
 
 	this.toggleMarker = toggleMarker;
+	
 	function toggleMarker(newActive){
+		var this_mt = this;	
 		// Takes a dictionary of marker and updates the details.active appropreately
 		for (var key in newActive) {
-			if (this.details.active.hasOwnProperty(key)){
-				this.details.active[key] = newActive[key];
+			if (this_mt.details.active.hasOwnProperty(key)){
+				this_mt.details.active[key] = newActive[key];
 			}
 			else{
 				console.log("Tried to change state of invalid key" + key);
