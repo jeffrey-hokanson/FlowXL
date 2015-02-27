@@ -41,7 +41,9 @@ flowXL.jobDetails = ( function() {
 		//*********************************************************************
 		// Next, create the table of active markers
 		//*********************************************************************
-		var $table = flowXL.markerTable(details, false);	
+		var mt = new flowXL.MarkerTable();
+		mt.details = details;
+		var $table = mt.render(true);
 		// Build containers and place table inside
 		var $table_container = document.createElement("div");
 		$table_container.setAttribute('class','marker-table');
