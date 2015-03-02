@@ -103,7 +103,7 @@ flowXL.MarkerTable = function(){
             buildButtonsForMarker.bind(this)( $row, marker);
 
             // First column of the table
-            var addColumnsToRow = function ( $row, file ) {
+            var addMarkersToRow = function ( $row, file ) {
 				var $rowEl = document.createElement("td");
 				var elClass = "";
 				$rowEl.innerHTML = marker.name;
@@ -119,14 +119,14 @@ flowXL.MarkerTable = function(){
             };
 
 			// Build out sequential rows in the table
-            details.files.forEach( addColumnsToRow.bind(this, $row) );
+            details.files.forEach( addMarkersToRow.bind(this, $row) );
 
 			// add the row to the table
 			$table.appendChild($row);
         };
 
 		// Now render each column
-		details.columns.forEach( renderMarkerRow.bind(this) );
+		details.markers.forEach( renderMarkerRow.bind(this) );
                 
     	return $table;
 	}
