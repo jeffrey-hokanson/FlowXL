@@ -1,9 +1,37 @@
 from flask import Flask, jsonify, render_template, json, request
-import simplejson
-
+from flask.ext.sqlalchemy import SQLAlchemy
+import os
 
 
 app = Flask(__name__)
+
+
+
+# Setup of the database
+dbfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + dbfile
+db = SQLAlchemy(app)
+
+class Active(db.Model):
+	__tablename__ = 'active'
+	__table_args__ = (
+		db.PrimaryKeyConstraint('job_id', 'marker', name = 'job_id_and_marker'),
+	)
+	
+	job_id = db.Column(db.BigInteger, index = True)
+	marker = db.Column(db.Text)
+	status = db.Column(db.Boolean)
+
+	def __init__(self, job_id, marker, status):
+		# TODO Add sanity checks
+		self.job_id = job_id
+		self.marker = marker
+		self.status = status
+
+#class Marker(db.Model):
+#	__tablename__ = 'marker'
+
+
 
 @app.route("/")
 def hello():
@@ -36,8 +64,18 @@ def test_selector():
 
 @app.route("/api/1/jobs/<int:job_id>/active", methods = ["PUT"])
 def api_handle_job_active(job_id):
+	""" Handles mapping the return state of active markers into the database
+	"""
+	# TODO: This should only be allowed when the job is in a certain state (i.e., 
+	# you should not be able to change markers while the t-SNE job is running.
 	if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
-		
+		active = request.json
+		for marker in active:
+			print job_id, marker, active[marker]
+			row = Active(job_id, marker, active[marker])
+			db.session.merge(row)
+			db.session.commit()
+
 		#TODO: This dummy code should be replaced to update the database
 		print json.dumps(request.json)
 	return 'OK'
