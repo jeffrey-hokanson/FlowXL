@@ -16,9 +16,13 @@
 		</div>
 	</div>	
 </div>
+<button type="button" class="btn btn-primary" id="send-active-state">
+	<span class="glyphicon glyphicon-play"></span> Run
+</button>
 <script>
 	var ms = new flowXL.MarkerSelector();
     ms.init({{job_id}}, "marker-selector");
+	ms.bindSendActive('send-active-state');
 </script>
 
 {% endblock body %}

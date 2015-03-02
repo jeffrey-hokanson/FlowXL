@@ -17,5 +17,12 @@ flowXL.MarkerSelector = function() {
 		$container.innerHTML = "";
 		this.mt.render(true);
 		$container.appendChild(this.mt.$table);
+
+	}
+	this.bindSendActive = bindSendActive.bind(this);
+
+	function bindSendActive(containerName){
+		var $button = document.getElementById(containerName);
+		$button.addEventListener("click", this.mt.sendActiveState);
 	}
 };

@@ -4,15 +4,15 @@ var flowXL = flowXL || {};
 flowXL.MarkerTable = function(){
 	this.details = "undefined";	// Will hold the details structure from jobs/1
 	this.$table = document.createElement("table");
-
+	this.jobID = -1;
 	/* Grabs the details for a job and places them in the details structure
 	 */
-	this.loadJob = loadJob;
+	this.loadJob = loadJob.bind(this);
 	function loadJob (jobID){
-		self = this;
+		this.jobID = jobID;
 		var r = new XMLHttpRequest();
 		r.open("GET", "/api/1/jobs/" + jobID, false);
-		r.onreadystatechange = function () {
+		r.onreadystatechange = (function () {
 			if (r.readyState != 4) {
 				return;
 			}
@@ -20,12 +20,20 @@ flowXL.MarkerTable = function(){
 			if (r.status >= 400) {
 				console.log( "Failure to load job details for job " + jobID);
 			} else {
-				self.details = JSON.parse(r.responseText);
+				this.details = JSON.parse(r.responseText);
 				console.log('Got ' + r.responseText);
 			}
-		};
+		}).bind(this);
     r.send();
 	};
+
+	this.sendActiveState = sendActiveState.bind(this);
+	function sendActiveState(){
+		var r = new XMLHttpRequest();
+		r.open("PUT", '/api/1/jobs/' + this.jobID + '/active', false);
+		r.setRequestHeader('Content-type','application/json; charset=utf-8');		
+		r.send(JSON.stringify(this.details.active));
+	}
 
 	this.render = render;
 	function render(showButtons){

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, json, request
 import simplejson
 
 app = Flask(__name__)
@@ -31,8 +31,14 @@ def api_handle_job_details(job_id):
 def test_selector():
     job_id = 1
     return render_template("marker_selector.html", job_id=job_id)
-    
 
+@app.route("/api/1/jobs/<int:job_id>/active", methods = ["PUT"])
+def api_handle_job_active(job_id):
+	if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
+		
+		#TODO: This dummy code should be replaced to update the database
+		print json.dumps(request.json)
+	return 'OK'
 
 @app.route("/jobs/<int:job_id>", methods=["GET"])
 def display_job_details(job_id):
