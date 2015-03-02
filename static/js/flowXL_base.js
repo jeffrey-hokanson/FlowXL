@@ -58,10 +58,10 @@ flowXL.MarkerTable = function(){
 				var buttonType = "";
 				if (_.has(details.active, marker.name)){
 					if (details.active[marker.name]){
-						buttonType = 'minus';
+						buttonType = 'check';
 					}
 					else{
-						buttonType = 'plus';
+						buttonType = 'unchecked';
 					}
 				}
 
@@ -73,8 +73,8 @@ flowXL.MarkerTable = function(){
                 });
 
                 switch(buttonType) {
-                    case "plus": /* fall through */
-                    case "minus" : 
+                    case "check": /* fall through */
+                    case "unchecked" : 
                                     $button.innerHTML = "<button type='button' class='btn btn-default btn-sm' " + 
                                         "id='" + marker.name + "'" +
                                         ">"+
@@ -82,7 +82,7 @@ flowXL.MarkerTable = function(){
                                         "</button>";
                                     $button.addEventListener("click", (function (){
                                         var update = {};
-                                        update[marker.name] = buttonType =="plus";
+                                        update[marker.name] = buttonType =="unchecked";
                                         this.toggleMarker(update);
                                         this.render(true);
                                         console.log("clicked " + marker.name);
