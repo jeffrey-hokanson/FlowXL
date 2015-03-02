@@ -4,9 +4,26 @@
 
 <script src="{{ url_for('static', filename='js/job_details.js') }}"></script>
 
-<div id="job-details">
+
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">Job Status</h3>
+	</div>
+	<div class="panel-body">
+		<div id="job-status"></div>
+	</div>
+	<div class="panel-heading">
+		<h3 class="panel-title">Markers</h3>
+	</div>
+	<div class="panel-body">
+		<div class="marker-table">
+			<div id="marker-table"></div>
+		</div>
+	</div>	
+</div>
+
 <script>
-    flowXL.jobDetails.init({{job_id}}, "job-details");
+    flowXL.jobDetails.init({{job_id}}, "job-status", 'marker-table');
 </script>
 </div>
 
