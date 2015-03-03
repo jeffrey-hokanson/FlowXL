@@ -44,7 +44,13 @@ class Active(db.Model):
 
 @app.route("/")
 def hello():
-	return render_template('main.html')
+	job_id = 1
+	return redirect('/{}'.format(job_id))
+
+@app.route("/<int:job_id>/")
+def upload_page(job_id):
+	return render_template('upload_page.html', job_id = job_id)
+
 
 def make_col_entry( name, files ):
     return { "name":name, "files":files }
@@ -79,21 +85,22 @@ def upload(job_id):
 		file = request.files['file']
 		if file:
 			filename = secure_filename(file.filename)
-			filename = join(base_path, filename)
 			mimetype = file.content_type
 
 			if not allowed_file(filename):
 				result = uploadfile(name=filename, type=mimetype, size=0, not_allowed_msg="Filetype not allowed", job_id = job_id)
 			else:
 				# save file to disk
-				uploaded_file_path = join(base_path, filename)
-				file.save(uploaded_file_path)
+				filepath = join(base_path, filename)
+				file.save(filepath)
 				
 				# get file size after saving
-				size = os.path.getsize(uploaded_file_path)
+				size = os.path.getsize(filepath)
 
                 # return json for js call back
 				result = uploadfile(name=filename, type=mimetype, size=size, job_id = job_id)
+			
+			return simplejson.dumps({"files": [result.get_file()]})
 	
 	if request.method == 'GET':
 		# get all file in ./data directory
