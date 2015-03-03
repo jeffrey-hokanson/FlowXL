@@ -5,6 +5,31 @@ flowXL.MarkerTable = function(){
 	this.details = "undefined";	// Will hold the details structure from jobs/1
 	this.$table = document.createElement("table");
 	this.jobID = -1;
+	this.showButtons = false;
+
+
+
+	this.init = init.bind(this);
+
+	function init(jobID, $table, showButtons){
+		this.loadJob(jobID);
+		this.$table = $table;
+		this.showButtons = showButtons
+		// Bind to update 
+		if (!!window.EventSource){
+			var es = new EventSource('/api/1/jobs/' + jobID + '/subscribe');
+
+			es.addEventListener('message', (function(e){
+				console.log(e.data);
+				if (e.data == 'update: new file'){
+					this.loadJob(jobID);
+					this.render(this.showButtons);
+				}
+			}).bind(this))
+		}
+	}
+
+
 	/* Grabs the details for a job and places them in the details structure
 	 */
 	this.loadJob = loadJob.bind(this);
@@ -20,11 +45,19 @@ flowXL.MarkerTable = function(){
 			if (r.status >= 400) {
 				console.log( "Failure to load job details for job " + jobID);
 			} else {
-				this.details = JSON.parse(r.responseText);
+				// If we have not loaded data before, overwrite the entire data structure
+				if (this.details == "undefined"){
+					this.details = JSON.parse(r.responseText);
+				}else{
+					// Otherwise, preserve the active markers
+					active = this.details.active;
+					this.details = JSON.parse(r.responseText);
+					this.details.active = active;
+				}
 				console.log('Got ' + r.responseText);
 			}
 		}).bind(this);
-    r.send();
+		r.send();
 	};
 
 	this.sendActiveState = sendActiveState.bind(this);

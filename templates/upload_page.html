@@ -22,6 +22,9 @@
 		</div>
 	</div>	
 </div>
+<button type="button" class="btn btn-primary" id="send-active-state">
+	<span class="glyphicon glyphicon-play"></span> Run
+</button>
 
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -62,31 +65,8 @@
             $(this).fileupload('option', 'done')
                 .call(this, $.Event('done'), {result: result});
         });
-
-
 	});
 </script>
-<!--
-<script>
-	if (!!window.EventSource){
-		var source = new EventSource('/api/1/jobs/{{job_id}}/subscribe');
-		
-		source.addEventListener('message', function(e){
-				console.log(e.data);
-				}, false);
-		source.addEventListener('open', function(e){
-				//Do nothing, connection was opened.
-				}, false);
-		source.addEventListener('error', function(e){
-				if (e.readyState == EventSource.CLOSED){
-					// connection closed
-				}
-			}, false);
-	}
-
-</script>
--->
-
 <script src="{{ url_for('static', filename='js/marker_selector.js') }}"></script>
 <script>
 	var ms = new flowXL.MarkerSelector();
