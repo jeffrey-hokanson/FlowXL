@@ -76,7 +76,9 @@ flowXL.MarkerTable = function(){
 		 */
 		var $table = this.$table;
 		var details = this.details;
-		
+	
+		var scroll = window.scrollY;
+
 		// Nuke the current structure
 		while ($table.firstChild){
 			$table.removeChild($table.firstChild);
@@ -108,7 +110,7 @@ flowXL.MarkerTable = function(){
 
 				// Only show plus/minus button on those rows where all files have that marker
                 details.files.forEach( function( file ) {
-                    if ( !_.includes(marker.files, file) ) {
+                    if ( ! _.includes(marker.files, file) ) {
                         buttonType = '';
                     }
                 });
@@ -135,6 +137,8 @@ flowXL.MarkerTable = function(){
                 }
 			}
 			$row.appendChild($button);
+
+			// return to scroll location
         };
 
         // function that creates a row for a marker
@@ -169,6 +173,7 @@ flowXL.MarkerTable = function(){
 		// Now render each column
 		details.markers.forEach( renderMarkerRow.bind(this) );
                 
+		window.scrollY = scroll;
     	return $table;
 	}
 
