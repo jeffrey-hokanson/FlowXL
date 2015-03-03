@@ -6,9 +6,9 @@ class uploadfile():
         self.type = type
         self.size = size
         self.not_allowed_msg = not_allowed_msg
-        self.url = os.path.join("api/1/jobs/", "%d" % (job_id, ), 'upload', name)
-        self.thumbnail_url = self.delete_url = os.path.join("api/1/jobs/", "%d" % (job_id, ), 'thumbnail', name)
-        self.delete_url = os.path.join("api/1/jobs/", "%d" % (job_id, ), 'delete', name)
+        self.url = os.path.join("/api/1/jobs/", "%d" % (job_id, ), 'upload', name)
+        self.thumbnail_url = self.delete_url = os.path.join("/api/1/jobs/", "%d" % (job_id, ), 'thumbnail', name)
+        self.delete_url = os.path.join("/api/1/jobs/", "%d" % (job_id, ), 'delete', name)
         self.delete_type = "DELETE"
 
 

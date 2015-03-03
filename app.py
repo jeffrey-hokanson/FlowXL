@@ -106,6 +106,7 @@ def upload(job_id):
 		# get all file in ./data directory
 		files = [ f for f in os.listdir(base_path) if os.path.isfile(os.path.join(base_path,f)) and f not in IGNORED_FILES ]    
 		file_display = []
+		print files
 
 		for f in files:
 			size = os.path.getsize(os.path.join(base_path, f))
