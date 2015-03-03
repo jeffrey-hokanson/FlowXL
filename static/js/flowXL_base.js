@@ -21,7 +21,7 @@ flowXL.MarkerTable = function(){
 
 			es.addEventListener('message', (function(e){
 				console.log(e.data);
-				if (e.data == 'update: new file'){
+				if (e.data.indexOf('update') > -1){
 					this.loadJob(jobID);
 					this.render(this.showButtons);
 				}
@@ -77,8 +77,8 @@ flowXL.MarkerTable = function(){
 		var $table = this.$table;
 		var details = this.details;
 	
-		var scroll = window.scrollY;
-
+		var scroll = window.pageYOffset;
+		console.log(scroll);
 		// Nuke the current structure
 		while ($table.firstChild){
 			$table.removeChild($table.firstChild);
@@ -138,7 +138,6 @@ flowXL.MarkerTable = function(){
 			}
 			$row.appendChild($button);
 
-			// return to scroll location
         };
 
         // function that creates a row for a marker
@@ -173,7 +172,12 @@ flowXL.MarkerTable = function(){
 		// Now render each column
 		details.markers.forEach( renderMarkerRow.bind(this) );
                 
-		window.scrollY = scroll;
+		// maximum scroll location
+		var limit = Math.max( document.body.scrollHeight, document.body.offsetHeight, 
+				    document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight );
+		console.log('Limit ' + limit);
+		window.pageYOffset = Math.max(scroll,limit);
+		console.log(window.pageYOffset);
     	return $table;
 	}
 
