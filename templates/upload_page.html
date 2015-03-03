@@ -166,10 +166,27 @@
 
 <script>
 	$(function () {
-		'use strict';
+		//'use strict';
 		$('#fileupload').fileupload({
 			url : '/api/1/jobs/{{job_id}}/upload'
 		});
+
+		// Loads the files that are already there
+        $('#fileupload').addClass('fileupload-processing');
+        $.ajax({
+            // Uncomment the following to send cross-domain cookies:
+            //xhrFields: {withCredentials: true},
+            url: $('#fileupload').fileupload('option', 'url'),
+            dataType: 'json',
+            context: $('#fileupload')[0]
+        }).always(function () {
+            $(this).removeClass('fileupload-processing');
+        }).done(function (result) {
+            $(this).fileupload('option', 'done')
+                .call(this, $.Event('done'), {result: result});
+        });
+
+
 	});
 </script>
 {% endblock body %}
