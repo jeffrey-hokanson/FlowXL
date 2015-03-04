@@ -429,7 +429,7 @@ def api_handle_job_active(job_id):
 		if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
 			active = request.json
 			for marker in active:
-				print job_id, marker, active[marker]
+				print "Job %d recieved marker %s : %s" % (job_id, marker, str(active[marker]))
 				row = Active(job_id, marker, active[marker])
 				db.session.merge(row)
 				db.session.commit()

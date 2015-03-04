@@ -22,8 +22,9 @@ flowXL.MarkerTable = function(){
 			es.addEventListener('message', (function(e){
 				console.log(e.data);
 				if (e.data.indexOf('update') > -1){
-					this.sendActiveState()
+					this.sendActiveState();
 					this.loadJob(jobID);
+					console.log(this.details.active);
 					this.render(this.showButtons);
 				}
 			}).bind(this))
@@ -47,15 +48,7 @@ flowXL.MarkerTable = function(){
 				console.log( "Failure to load job details for job " + jobID);
 			} else {
 				// If we have not loaded data before, overwrite the entire data structure
-				if (this.details == "undefined"){
-					this.details = JSON.parse(r.responseText);
-				}else{
-					// Otherwise, preserve the active markers
-					//active = this.details.active;
-					this.sendActiveState()
-					this.details = JSON.parse(r.responseText);
-					//this.details.active = active;
-				}
+				this.details = JSON.parse(r.responseText);
 				console.log('Got ' + r.responseText);
 			}
 		}).bind(this);
