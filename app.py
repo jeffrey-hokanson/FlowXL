@@ -1,3 +1,5 @@
+#! /usr/bin/python
+
 from flask import Flask, Response, jsonify, render_template, json, request, redirect, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from werkzeug import secure_filename
@@ -5,13 +7,14 @@ import os
 from os.path import join
 import simplejson
 
+from datetime import datetime
+
 # For ServerSent Events
 import gevent
 from gevent.wsgi import WSGIServer
 from gevent.queue import Queue
-import time
 
-
+from lib import fcs
 
 from lib.upload_file import uploadfile
 
@@ -33,6 +36,10 @@ app.config['DATA_PATH'] = join(os.path.dirname(os.path.realpath(__file__)), 'dat
 # List of subscribers 
 SUBSCRIPTIONS = []
 
+
+################################################################################
+# Database Configuration 
+################################################################################
 
 class Active(db.Model):
 	""" Holds list of active markers per job
@@ -65,7 +72,7 @@ class Files(db.Model):
 		self.job_id = job_id
 		self.filename = filename
 
-class Marker(db.Model):
+class Markers(db.Model):
 	__tablename__ = 'markers'
 	__table_args__ = (
 			db.PrimaryKeyConstraint('job_id', 'filename', 'marker', name = 'job_id_and_filename_and_marker'),
@@ -79,6 +86,36 @@ class Marker(db.Model):
 		self.job_id = job_id
 		self.filename = filename
 		self.marker = marker
+
+class Jobs(db.Model):
+	__tablename__ = 'jobs'
+	__table_args__ = (
+			db.PrimaryKeyConstraint('id'),
+		)
+	id = db.Column(db.BigInteger, index = True)
+	perplexity  = db.Column(db.Float)
+	email = db.Column(db.Text)
+	first_access = db.Column(db.DateTime)
+	ip = db.Column(db.Text)
+	status = db.Column(db.Text)
+
+	def __init__(self, id, perplexity = 20, email = None, first_access = None, ip = None, status = 'uploading'):
+		self.id = id
+		self.perplexity = perplexity
+		self.email = email
+
+
+		if first_access is None:
+			first_access = datetime.now()
+		self.first_access = first_access
+		self.ip = ip
+		self.status = status
+
+
+
+################################################################################
+# Server Sent Events Class 
+################################################################################
 
 # Follows: http://flask.pocoo.org/snippets/116/
 class ServerSentEvent(object):
@@ -103,15 +140,81 @@ class ServerSentEvent(object):
 		return "%s\n\n" % "\n".join(lines)
 
 
-
+################################################################################
+# Web Pages 
+################################################################################
 @app.route("/")
 def hello():
-	job_id = 1
+	ip = request.remote_addr
+	job_id = get_job(ip)
+	print "Requesting IP address: " + str(ip)
 	return redirect('/{}'.format(job_id))
 
 @app.route("/<int:job_id>/")
 def upload_page(job_id):
 	return render_template('upload_page.html', job_id = job_id)
+
+
+@app.route("/test/selector", methods=["GET"])
+def test_selector():
+    job_id = 1
+    return render_template("marker_selector.html", job_id=job_id)
+
+
+@app.route("/jobs/<int:job_id>", methods=["GET"])
+def display_job_details(job_id):
+    return render_template("job_details.html", job_id=job_id)
+
+
+
+################################################################################
+# Helper Functions
+################################################################################
+
+def get_job(ip):
+	"""Return the job_id of either a new job or the job currently used by 
+	the requesting IP address
+	"""
+	
+	# See if we have an open job for the current IP address:
+	job = db.session.query(Jobs).filter(Jobs.ip == ip, Jobs.status == 'uploading').first()
+	print job
+	if job:
+		return job.id
+	else:
+		max_id = db.session.query(db.func.max(Jobs.id)).scalar()
+		if max_id is not None:
+			new_id = max_id + 1
+		else:
+			new_id = 1
+		
+		new_job = Jobs(new_id, ip = ip)
+		db.session.merge(new_job)
+		db.session.commit()
+		return new_id
+
+def publish(job_id, message):
+	""" Sends message to the subscribers
+	"""
+
+	def notify():
+		for sub in SUBSCRIPTIONS[:]:
+			sub.put(message)
+	
+	gevent.spawn(notify)
+	return "OK"
+
+def allowed_file(filename):
+	""" Helper function that returns true if we can read the provided file type
+	"""
+	allowed_extensions = ['fcs']
+	return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+def get_base_path(job_id):
+	""" Helper function that returns the folder on disk where files are stored.
+	"""
+	return join(app.config['DATA_PATH'], '%09d' % (job_id,))
 
 
 def make_col_entry( name, files ):
@@ -121,6 +224,44 @@ def make_job_details_dict( files, status, markers, active):
 	return { "files":files, "status":status, "markers":markers, "active": active} 
 
 
+def import_file(job_id, filename):
+	""" Adds database entires corresponding to the FCS file
+	"""
+	base_path = get_base_path(job_id)
+	filepath = join(base_path, filename)
+	if True:
+		(data, metadata, analysis, meta_analysis) = fcs.read(filepath, only_header = True)
+		# First, add the file to the database
+		row = Files(job_id, filename)
+		db.session.merge(row)
+		db.session.commit()
+
+		nparameters = int(metadata['$PAR'])
+		markers = [ metadata.get('$P{:d}N'.format(j),'{:d}'.format(j)) for j in range(1,nparameters+1) ]
+		# Now add the markers
+		for marker in markers:
+			row = Markers(job_id, filename, marker)
+			db.session.merge(row)
+			db.session.commit()
+	else:
+		#TODO Should return an error back to the user if we cannot process the file
+		pass
+
+def delete_file(job_id, filename):
+	""" Removes a file from the database
+
+	"""
+	for file in db.session.query(Files).filter(Files.job_id == job_id, Files.filename == filename).all():
+		db.session.delete(file)
+		db.session.commit()
+	
+	for marker in db.session.query(Markers).filter(Markers.job_id == job_id, Markers.filename == filename).all():
+		db.session.delete(marker)
+		db.session.commit()
+
+################################################################################
+# API
+################################################################################
 
 @app.route('/api/1/jobs/<int:job_id>/subscribe')
 def subscribe(job_id):
@@ -140,35 +281,6 @@ def subscribe(job_id):
 			SUBSCRIPTIONS.remove(q)
 	
 	return Response(gen(), mimetype='text/event-stream')
-
-
-def publish(job_id, message):
-	""" Sends message to the subscribers
-	"""
-
-	def notify():
-		for sub in SUBSCRIPTIONS[:]:
-			sub.put(message)
-	
-	gevent.spawn(notify)
-	return "OK"
-
-################################################################################
-# API
-################################################################################
-
-def allowed_file(filename):
-	""" Helper function that returns true if we can read the provided file type
-	"""
-	allowed_extensions = ['fcs']
-	return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-def get_base_path(job_id):
-	""" Helper function that returns the folder on disk where files are stored.
-	"""
-	return join(app.config['DATA_PATH'], '%09d' % (job_id,))
-
 
 @app.route("/api/1/jobs/<int:job_id>/upload", methods = ['GET','POST'])
 def upload(job_id):
@@ -199,9 +311,11 @@ def upload(job_id):
                 # return json for js call back
 				result = uploadfile(name=filename, type=mimetype, size=size, job_id = job_id)
 			
+				# process file
+				import_file(job_id, filename)
+
 				# Send message about a new file
 				publish(job_id, "update: new file")
-
 			return simplejson.dumps({"files": [result.get_file()]})
 	
 	if request.method == 'GET':
@@ -228,6 +342,8 @@ def delete(job_id, filename):
 	if os.path.exists(file_path):
 		try:
 			os.remove(file_path)
+			delete_file(job_id, filename)
+			publish(job_id, "update: delete file")
 			return simplejson.dumps({filename: 'True'})
 		except:
 			return simplejson.dumps({filename: 'False'})
@@ -239,21 +355,30 @@ def get_file(job_id, filename):
 
 @app.route("/api/1/jobs/<int:job_id>", methods=["GET"])
 def api_handle_job_details(job_id):
-    files = [ "I01-4078770-Unstained-IrOnly_cells_found.fcs", "I02-4078770-PB-Baseline_cells_found.fcs","I03-4078770-BM-Baseline_cells_found.fcs"]
-    status = "queued"
-    markers = [ make_col_entry('CD8a', files), 
-				make_col_entry( "CD45", files), 
-				make_col_entry( "CD133", [files[0]]), 
-				make_col_entry( "CD123", [files[1]])
-			]
-    active = {"CD8a": False, "CD45": True, "CD133": False, "CD123": False}
-    return jsonify( make_job_details_dict( files, status, markers, active) )
+
+	files = db.session.query(Files).filter(Files.job_id == job_id).all()
+	filenames = [ f.filename for f in files]
+	markers = db.session.query(Markers).filter(Markers.job_id == job_id).all()
+	# Get the list of unqiue markers
+	unique_markers = list(set([m.marker for m in markers]))
+
+	marker_table = []
+	active = {}
+	for marker in unique_markers:
+		files_for_marker = db.session.query(Markers).filter(Markers.job_id == job_id, Markers.marker == marker).all()
+		files_for_marker = [ f.filename for f in files_for_marker]
+		marker_table.append(make_col_entry(marker, files_for_marker))
+		
+		# If the marker is contained in every file, set it to active
+		active[marker] = (len(files_for_marker) == len(filenames))
+
+	print active
+	print marker_table
+	print filenames
+	status = "queued"
+	return jsonify( make_job_details_dict( filenames, status, marker_table, active) )
 
 
-@app.route("/test/selector", methods=["GET"])
-def test_selector():
-    job_id = 1
-    return render_template("marker_selector.html", job_id=job_id)
 
 @app.route("/api/1/jobs/<int:job_id>/active", methods = ["PUT"])
 def api_handle_job_active(job_id):
@@ -273,9 +398,6 @@ def api_handle_job_active(job_id):
 		print json.dumps(request.json)
 	return 'OK'
 
-@app.route("/jobs/<int:job_id>", methods=["GET"])
-def display_job_details(job_id):
-    return render_template("job_details.html", job_id=job_id)
 
 if __name__ == "__main__":
 
@@ -283,7 +405,7 @@ if __name__ == "__main__":
 	# i.e., if file saved, reloads server.
 	# Note, debug mode is ___UNSAFE___
 	#app.run(debug = True)
-	
+	app.debug = True
 	server = WSGIServer(("",5000), app)
 	server.serve_forever()
 
