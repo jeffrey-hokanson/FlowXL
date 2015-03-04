@@ -1,0 +1,3 @@
+[submodule "vendor/py_bh_tsne"]
+	path = vendor/py_bh_tsne
+	url = git@github.com:osdf/py_bh_tsne.git
