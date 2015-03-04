@@ -3,11 +3,6 @@ var flowXL = flowXL || {};
 flowXL.MarkerSelector = function() {
 
 	this.mt = "";
-	
-	
-	
-	
-	
 	this.init  = init;
 	
 	function run(){
@@ -24,7 +19,6 @@ flowXL.MarkerSelector = function() {
 			// Submit email address via API
 			this.$alertContainer.innerHTML = "";
 			this.sendEmailAddress();
-			this.queueJob();
 		}
 		else{
 			this.$alertContainer.innerHTML = "<div class='alert-danger' role='alert'> <strong> Oh snap!</strong> Try entering a valid email address and trying again</div>";	
@@ -33,6 +27,9 @@ flowXL.MarkerSelector = function() {
 		// Check number of files non-zero
 
 		// Submit job 
+		this.queueJob();
+		// Redirect to status page
+		window.location = '/jobs/' + this.jobID;
 
 	}
    
