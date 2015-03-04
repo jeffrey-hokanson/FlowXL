@@ -50,9 +50,10 @@ flowXL.MarkerTable = function(){
 					this.details = JSON.parse(r.responseText);
 				}else{
 					// Otherwise, preserve the active markers
-					active = this.details.active;
+					//active = this.details.active;
+					this.sendActiveState()
 					this.details = JSON.parse(r.responseText);
-					this.details.active = active;
+					//this.details.active = active;
 				}
 				console.log('Got ' + r.responseText);
 			}
@@ -107,10 +108,14 @@ flowXL.MarkerTable = function(){
 						buttonType = 'unchecked';
 					}
 				}
+				else{
+					// By default, include marker and we will correct below
+					buttonType = 'check';
+				}
 
 				// Only show plus/minus button on those rows where all files have that marker
                 details.files.forEach( function( file ) {
-                    if ( ! _.includes(marker.files, file) ) {
+                    if ( (! (_.includes(marker.files, file)) )  ) {
                         buttonType = '';
                     }
                 });

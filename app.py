@@ -98,8 +98,8 @@ class Jobs(db.Model):
 	first_access = db.Column(db.DateTime)
 	ip = db.Column(db.Text)
 	status = db.Column(db.Text)
-
-	def __init__(self, id, perplexity = 20, email = None, first_access = None, ip = None, status = 'uploading'):
+	progress = db.Column(db.Float)
+	def __init__(self, id, perplexity = 20, email = None, first_access = None, ip = None, status = 'uploading', progress = 0.):
 		self.id = id
 		self.perplexity = perplexity
 		self.email = email
@@ -110,6 +110,7 @@ class Jobs(db.Model):
 		self.first_access = first_access
 		self.ip = ip
 		self.status = status
+		self.progress = progress
 
 
 
@@ -265,6 +266,39 @@ def delete_file(job_id, filename):
 		db.session.delete(marker)
 		db.session.commit()
 
+def get_active(job_id):
+	"""Return a dictionary listing which markers are active
+	"""
+	# Load the state of markers already in the database
+	state = db.session.query(Active).filter(Active.job_id == job_id).all()
+	active = {}
+	for s in state:
+		active[s.marker] = s.status
+
+	# generate state for markers not in the database 
+	r = db.session.query(Markers).filter(Markers.job_id == job_id).all()
+	all_markers = list(set([m.marker for m in r]))
+	print all_markers
+	# Remove markers already active
+	for marker in active:
+		try:
+			all_markers.remove(marker)
+		except:
+			pass
+	
+	total_files = db.session.query(Files).filter(Files.job_id == job_id).count()
+	for marker in all_markers:
+		total_for_marker = db.session.query(Markers).filter(Markers.job_id == job_id, Markers.marker == marker).count()
+		active[marker] = ( total_files == total_for_marker )
+			
+	return active
+
+def get_status(job_id):
+	"""Returns the status of a job
+	"""
+	r = db.session.query(Jobs).filter(Jobs.id == job_id).first()
+	return r.status
+
 ################################################################################
 # API
 ################################################################################
@@ -369,19 +403,17 @@ def api_handle_job_details(job_id):
 	unique_markers = list(set([m.marker for m in markers]))
 
 	marker_table = []
-	active = {}
+	
 	for marker in unique_markers:
 		files_for_marker = db.session.query(Markers).filter(Markers.job_id == job_id, Markers.marker == marker).all()
 		files_for_marker = [ f.filename for f in files_for_marker]
 		marker_table.append(make_col_entry(marker, files_for_marker))
 		
-		# If the marker is contained in every file, set it to active
-		active[marker] = (len(files_for_marker) == len(filenames))
+#		# If the marker is contained in every file, set it to active
+#		active[marker] = (len(files_for_marker) == len(filenames))
 
-	print active
-	print marker_table
-	print filenames
-	status = "queued"
+	active = get_active(job_id)
+	status = get_status(job_id)
 	return jsonify( make_job_details_dict( filenames, status, marker_table, active) )
 
 
@@ -392,17 +424,22 @@ def api_handle_job_active(job_id):
 	"""
 	# TODO: This should only be allowed when the job is in a certain state (i.e., 
 	# you should not be able to change markers while the t-SNE job is running.
-	if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
-		active = request.json
-		for marker in active:
-			print job_id, marker, active[marker]
-			row = Active(job_id, marker, active[marker])
-			db.session.merge(row)
-			db.session.commit()
+	if request.method == 'PUT':
+		if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
+			active = request.json
+			for marker in active:
+				print job_id, marker, active[marker]
+				row = Active(job_id, marker, active[marker])
+				db.session.merge(row)
+				db.session.commit()
 
-		#TODO: This dummy code should be replaced to update the database
+			#TODO: This dummy code should be replaced to update the database
 		print json.dumps(request.json)
-	return 'OK'
+		return 'OK'
+	
+#	if request.method == 'GET':
+#		active = get_active(job_id)
+#		return simplejson.dumps(active)	
 
 
 if __name__ == "__main__":
