@@ -22,6 +22,7 @@ flowXL.MarkerTable = function(){
 			es.addEventListener('message', (function(e){
 				console.log(e.data);
 				if (e.data.indexOf('update') > -1){
+					this.sendActiveState()
 					this.loadJob(jobID);
 					this.render(this.showButtons);
 				}

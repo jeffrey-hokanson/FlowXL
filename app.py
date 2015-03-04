@@ -269,28 +269,30 @@ def delete_file(job_id, filename):
 def get_active(job_id):
 	"""Return a dictionary listing which markers are active
 	"""
-	# Load the state of markers already in the database
-	state = db.session.query(Active).filter(Active.job_id == job_id).all()
-	active = {}
-	for s in state:
-		active[s.marker] = s.status
-
-	# generate state for markers not in the database 
+	# Generate default state of markers 
 	r = db.session.query(Markers).filter(Markers.job_id == job_id).all()
 	all_markers = list(set([m.marker for m in r]))
-	print all_markers
-	# Remove markers already active
-	for marker in active:
-		try:
-			all_markers.remove(marker)
-		except:
-			pass
-	
+	active = {}	
 	total_files = db.session.query(Files).filter(Files.job_id == job_id).count()
 	for marker in all_markers:
 		total_for_marker = db.session.query(Markers).filter(Markers.job_id == job_id, Markers.marker == marker).count()
 		active[marker] = ( total_files == total_for_marker )
-			
+		# Now set state in database
+		#a = Active(job_id, marker, active[marker])
+		#db.session.merge(a)
+		#db.session.commit()
+	
+	# Load the state of markers already in the database
+	r = db.session.query(Active).filter(Active.job_id == job_id).all()
+	for a in r:
+		active[a.marker] = a.status
+	
+	for marker in active:
+		a = Active(job_id, marker, active[marker])
+		db.session.merge(a)
+		db.session.commit()
+	
+	
 	return active
 
 def get_status(job_id):
@@ -362,7 +364,6 @@ def upload(job_id):
 		# get all file in ./data directory
 		files = [ f for f in os.listdir(base_path) if os.path.isfile(os.path.join(base_path,f)) and f not in IGNORED_FILES ]    
 		file_display = []
-		print files
 
 		for f in files:
 			size = os.path.getsize(os.path.join(base_path, f))
@@ -432,9 +433,8 @@ def api_handle_job_active(job_id):
 				row = Active(job_id, marker, active[marker])
 				db.session.merge(row)
 				db.session.commit()
-
-			#TODO: This dummy code should be replaced to update the database
-		print json.dumps(request.json)
+		
+		#print json.dumps(request.json)
 		return 'OK'
 	
 #	if request.method == 'GET':
