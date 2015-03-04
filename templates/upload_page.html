@@ -18,11 +18,31 @@
 		<div class="marker-table">
 			<div id="marker-selector"></div>
 		</div>
+	</div>
+	<div class="panel-heading">
+		<h3 class="panel-title">Submit Job</h3>
+	</div>
+	<div class="panel-body">
+		<p style="width: 500px">
+			After you have finished selecting the markers you wish to use to compute the t-SNE embedding, 
+			please enter an email address and push run.  
+			Your job will be entered into the queue and results emailed to you when you are done.
+		</p>
+		<div class="form-inline">
+			<div class="form-group">
+				<div class="input-group">
+					<span class="input-group-addon">@</span>
+					<input id='email-address' type="text" class="form-control" name="email" size="50" placeholder="email address" />	
+				</div>
+				<button type="button" class="btn btn-primary" id="submit">
+					<span class="glyphicon glyphicon-play"></span> Run
+				</button>
+			</div>
+			<div id="submit-alert">
+			</div>
+		</div>
 	</div>	
 </div>
-<button type="button" class="btn btn-primary" id="send-active-state">
-	<span class="glyphicon glyphicon-play"></span> Run
-</button>
 
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -68,8 +88,12 @@
 <script src="{{ url_for('static', filename='js/marker_selector.js') }}"></script>
 <script>
 	var ms = new flowXL.MarkerSelector();
-    ms.init({{job_id}}, "marker-selector");
-	ms.bindSendActive('send-active-state');
+    ms.init({{job_id}}, "marker-selector", "email-address", "submit", "submit-alert");
+
+
+	//$runButton.addEventListener("click", run.bind(ms));
+
+	//ms.bindSendActive('send-active-state');
 </script>
 
 {% endblock body %}

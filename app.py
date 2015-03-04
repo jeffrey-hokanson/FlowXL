@@ -324,6 +324,8 @@ def subscribe(job_id):
 	
 	return Response(gen(), mimetype='text/event-stream')
 
+
+
 @app.route("/api/1/jobs/<int:job_id>/upload", methods = ['GET','POST'])
 def upload(job_id):
 	""" Provides API for reading/uploading the files on the disk
@@ -441,6 +443,38 @@ def api_handle_job_active(job_id):
 #		active = get_active(job_id)
 #		return simplejson.dumps(active)	
 
+@app.route("/api/1/jobs/<int:job_id>/email", methods = ["PUT"])
+def api_handle_job_email(job_id):
+	""" Takes a string as input, maps it to the email address
+	"""
+
+	if request.method == 'PUT':
+		if request.headers['Content-Type'].lower() == 'application/json; charset=utf-8':
+			print request.json
+			email = request.json['email']
+			job = db.session.query(Jobs).filter(Jobs.id == job_id).first()
+			job.email = email
+			db.session.merge(job)
+			db.session.commit()
+			print "Added Email"
+			return "OK"
+	print "failed to add email"
+	return "Fail"
+
+@app.route("/api/1/jobs/<int:job_id>/queue", methods = ["POST"])
+def api_handle_job_queue(job_id):
+	"""When called, this pushes job_id onto the queue.
+	"""
+	
+	if request.method == "POST":
+		job = db.session.query(Jobs).filter(Jobs.id == job_id).first()
+		job.status = 'queued'
+		db.session.merge(job)
+		db.session.commit()
+	
+		print "%d job queued" % (job_id,)
+		return "OK"
+	return "FAILED"
 
 if __name__ == "__main__":
 

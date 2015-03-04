@@ -23,7 +23,7 @@ flowXL.jobDetails = ( function() {
 		this.mt.render(false);
 
 		// Render the job information
-		$jobContainer.innerHTML = details.status; 
+		$jobContainer.innerHTML = this.details.status; 
 	}
 
     return {
