@@ -237,9 +237,15 @@ def import_file(job_id, filename):
 		db.session.commit()
 
 		nparameters = int(metadata['$PAR'])
-		markers = [ metadata.get('$P{:d}N'.format(j),'{:d}'.format(j)) for j in range(1,nparameters+1) ]
-		# Now add the markers
-		for marker in markers:
+		marker_names = [ metadata.get('$P{:d}N'.format(j), None) for j in range(1,nparameters+1) ]
+		marker_snames = [ metadata.get('$P{:d}S'.format(j), None) for j in range(1,nparameters+1) ]
+
+		# Now add the markers, picking the best of either S or N
+		for n,s in zip(marker_names, marker_snames):
+			if s is not None:
+				marker = s
+			else:
+				marker = n
 			row = Markers(job_id, filename, marker)
 			db.session.merge(row)
 			db.session.commit()
