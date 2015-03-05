@@ -377,11 +377,16 @@ def batch_tsne(job_id):
 	sample = int(1e5)
 	# Set markers
 
-	m = db.session.query(Markers).filter(Markers.job_id == job_id).all()
+	#m = db.session.query(Markers).filter(Markers.job_id == job_id).all()
+	active = get_active(job_id)
 	markers = []
-	for marker in m:
-		if marker.active:
-			markers.append(marker.marker)
+	for key in active: 
+		if active[key]:
+			markers.append(key)
+	#markers = []
+	#for marker in m:
+	#	if marker.active:
+	#		markers.append(marker.marker)
 
 	tsne(fdarray, sample = sample, channels = markers)
 
