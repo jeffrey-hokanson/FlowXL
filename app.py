@@ -9,32 +9,79 @@ import simplejson
 
 from datetime import datetime
 
+from celery import Celery
+
+from flask_mail import Mail, Message
+
+
 # For ServerSent Events
 import gevent
 from gevent.wsgi import WSGIServer
 from gevent.queue import Queue
 
+# Custom code
 from lib import fcs
-
 from lib.upload_file import uploadfile
 
-app = Flask(__name__)
+# Import Code For TSNE
+from lib.flowdata import FlowData
+from lib.flow_tsne import tsne
+
+# For zipping files
+import zipfile
+try:
+    import zlib
+    compression = zipfile.ZIP_DEFLATED
+except:
+    compression = zipfile.ZIP_STORED
+
 
 ALLOWED_EXTENSIONS = set(['fcs'])
 IGNORED_FILES = set(['.gitignore'])
 
+################################################################################
+# App configuration
+################################################################################
+
+app = Flask(__name__)
 
 # Setup of the database
 dbfile = join(os.path.dirname(os.path.realpath(__file__)), 'test.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + dbfile
 db = SQLAlchemy(app)
 
-# Generic setup
-app.config['DATA_PATH'] = join(os.path.dirname(os.path.realpath(__file__)), 'data')
+# Import settings
+import settings
+app.config.from_object('settings')
+try:
+	import secret_settings
+	app.config.from_object('secret_settings')
+except:
+	pass
 
 
-# List of subscribers 
+# Celery
+def make_celery(app):
+    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+    class ContextTask(TaskBase):
+        abstract = True
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+    celery.Task = ContextTask
+    return celery
+
+celery = make_celery(app)
+
+# List of subscribers for server sent events
 SUBSCRIPTIONS = []
+
+
+# setup for mail
+mail = Mail()
+mail.init_app(app)
 
 
 ################################################################################
@@ -301,6 +348,89 @@ def get_status(job_id):
 	r = db.session.query(Jobs).filter(Jobs.id == job_id).first()
 	return r.status
 
+
+################################################################################
+# Helper functions for the tSNE and Mailing
+################################################################################
+@celery.task()
+def batch_tsne(job_id):
+	job = db.session.query(Jobs).filter(Jobs.id == job_id).first()
+	
+	# Set the job state to running
+	job.status = 'running'
+	db.session.merge(job)
+	db.session.commit()
+
+	# Base path to data
+	base_path = get_base_path(job_id)
+
+	# Build list of files
+	r = db.session.query(Files).filter(Files.job_id == job_id).all()
+	fnames = []
+	fdarray = []
+	for file in r:
+		fname = file.filename
+		fdarray.append(FlowData(join(base_path,fname)))
+		fnames.append(fname)
+
+	# TODO: Allow more options for the tSNE embedding
+	sample = int(1e5)
+	# Set markers
+
+	m = db.session.query(Markers).filter(Markers.job_id == job_id).all()
+	markers = []
+	for marker in m:
+		if marker.active:
+			markers.append(marker.marker)
+
+	tsne(fdarray, sample = sample, channels = markers)
+
+
+	# Write the files back out
+	for fd, fname in zip(fdarray, fnames):
+		fd._metadata['flowml-version'] = str(0.3) #TODO: pull version number from app configuration
+		fd._metadata['flowml-samples'] = str(sample)
+		fd.fcs_export(join(base_path,'tsne_' +fname))
+	
+	
+	# This is the name of the file the users will be downloading
+	zipbasename = 'tsne.zip'
+	zipfilename = join(base_path, zipbasename)
+	zipf = zipfile.ZipFile(zipfilename, mode = 'w')
+	
+	for fname in fnames:
+		zipf.write(join(base_path,'tsne_'+fname ), arcname = fname, compress_type = compression)
+
+	# If we have more than one file, include a combined file 
+	#if len(fdarray) > 1:
+	#	f_order = open(join(path,'file_number.txt'), 'w')
+	#	for j, fd in enumerate(fdarray):
+	#		fd['file_number'] = (j+1)*np.ones((fd.shape[0],))
+	#		name = os.path.split(fnames[j])[1]
+	#		f_order.write('#%02d : %s\n' % (j+1, name))
+	#	merged_fd = fml.concat(fdarray)
+	#	merged_fd.fcs_export(join(path,'merged.fcs'))
+	#	f_order.close()
+	#	zipf.write(join(path,'merged.fcs'), arcname = 'merged.fcs', compress_type = compression)
+	#	zipf.write(join(path,'file_number.txt'), arcname = 'file_number.txt', compress_type = compression)
+
+	zipf.close()
+
+	# send an email to announce completion
+	msg = Message("Your t-SNE run is complete.", recipients = [job.email])
+	# FIXME: make this more generic and not hard coded
+	url = app.config['EXTERNAL_URL_BASE'] + '/{}/{}'.format(job_id, zipfilename)
+	msg.body = ('Congradulations, your t-SNE run has completed.'
+			'You may download the results at: ' + url + ' '
+			'If you have encoutered problems, please email jhokanson@mdanderson.org.')
+	mail.send(msg)	
+
+	# Set status in the database 
+	job.status = "Complete!"
+	db.session.merge(job)
+	db.session.commit()
+
+
 ################################################################################
 # API
 ################################################################################
@@ -471,7 +601,9 @@ def api_handle_job_queue(job_id):
 		job.status = 'queued'
 		db.session.merge(job)
 		db.session.commit()
-	
+		# Queue with celery the job
+		batch_tsne.apply_async((job_id,))	
+
 		print "%d job queued" % (job_id,)
 		return "OK"
 	return "FAILED"
