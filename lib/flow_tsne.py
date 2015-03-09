@@ -3,8 +3,8 @@ import numpy as np
 from scipy.spatial import cKDTree as KDTree
 
 
-def tsne(fdarray, new_label = 'tsne',  channels = None, transform = 'arcsinh', sample = 6000,
-         verbose = False, backgate = True):
+def tsne(fdarray, new_label = 'tsne',  channels = None, transform = 'arcsinh', transform_coeff = 5, sample = 6000,
+         verbose = False, backgate = True, perplexity = 30.):
     """Perform t-SNE/viSNE on the FlowData object
     
     """
@@ -26,7 +26,7 @@ def tsne(fdarray, new_label = 'tsne',  channels = None, transform = 'arcsinh', s
     if transform == 'arcsinh':
         for pts in points:
             # Apply the transform inplace to the data
-            np.arcsinh(5*pts, pts)
+            np.arcsinh(transform_coeff*pts, pts)
     
     # Randomly sample to reduce the number of points
     sample_masks = []
@@ -45,7 +45,7 @@ def tsne(fdarray, new_label = 'tsne',  channels = None, transform = 'arcsinh', s
     X = np.vstack(sample_points)
 
     # Perform t-SNE
-    Y = fast_tsne(X)
+    Y = fast_tsne(X, perplexity=perplexity)
     assert Y is not None, ('t-SNE failed to return') 
 
     # Split Y into a matrix for each dataset
